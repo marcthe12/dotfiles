@@ -1,0 +1,4 @@
+#!/usr/bin/sed -f
+
+s/^[[:space:]]*//
+s/[[:space:]]*$//

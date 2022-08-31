@@ -1,0 +1,59 @@
+#!/bin/sh -i
+
+case $- in
+	*i*) ;;
+
+	*)
+		return
+		;;
+esac
+
+set -o vi
+set -o nounset
+set -o noclobber
+set -o ignoreeof
+
+PS1='$(sh-prompt $?)'
+PS2="> "
+PS3='? '
+PS4='+ '
+
+HISTSIZE=65535
+HISTFILE=/dev/null
+
+du(){
+        set -- -k "$@"
+        command du "$@"
+}
+
+df(){
+        set -- -k "$@"
+        command df "$@"
+}
+
+egrep() {
+        set -- -E "$@"
+        grep "$@"
+}
+
+fgrep() {
+        set -- -F "$@"
+        grep "$@"
+}
+
+ls(){
+        set -- -Fk "$@"
+        command ls  "$@"
+}
+
+venvon(){
+	. "${1:-venv}/bin/activate"
+}
+
+if test -n ${TTY-} && test -t 0
+then
+	TTY=$(tty)
+	export TTY
+	export GPG_TTY=$TTY
+fi
+

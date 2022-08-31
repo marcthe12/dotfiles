@@ -1,0 +1,7 @@
+[binaries]
+c_ld = 'lld'
+cpp_ldd = 'lld'
+ar = 'llvm-ar'
+strip = 'llvm-strip'
+
+
