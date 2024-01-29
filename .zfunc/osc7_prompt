@@ -1,0 +1,5 @@
+#!zsh
+emulate -L zsh
+
+printf "\e]7;file://%s%s\e\\" "${HOSTNAME}" "$(/usr/lib/vte-urlencode-cwd)"
+

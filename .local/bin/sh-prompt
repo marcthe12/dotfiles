@@ -1,3 +1,24 @@
 #!/bin/sh --
 
-printf "%u %s@%s %s $ " "$1" "$(id -un)" "$(uname -n)" "$(pwd|sed 's|'"$HOME"'|~|g')"
+(
+	save="$(stty -g)"
+	stty sane
+	tput sgr0
+#	tput rmcup
+	if test "${VTE_VERSION:-0}" -ge 3405
+	then
+		printf "\x1b]7;file://%s%s\x1b\\" "$(uname)" "$(pwd)"
+	fi
+	set-title "$(printf "%s@%s:%s" "$(id -un)" "$(uname -n)" "$(pwd|sed 's|'"$HOME"'|~|g')")"
+	stty "$save"
+) > /dev/tty
+
+case "$(id -u)" in
+	0) 
+		PS='#'
+		;;
+	*)
+		PS='$'
+esac
+
+printf "%u %s@%s:%s %c " "$1" "$(id -un)" "$(uname -n)" "$(pwd -L|sed 's|'"$HOME"'|~|g')" "$PS"

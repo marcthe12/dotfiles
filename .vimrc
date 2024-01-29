@@ -8,6 +8,12 @@ set errorbells
 set belloff=
 set title
 
+noremap <Up> <Nop>
+noremap <Down> <Nop>
+noremap <Left> <Nop>
+noremap <Right> <Nop>
+set clipboard+=unnamedplus
+
 set swapfile
 set directory^=~/.vim/swap//
 set writebackup

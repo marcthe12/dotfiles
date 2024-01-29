@@ -1,0 +1,28 @@
+#!zsh
+emulate -L zsh
+
+prompt_marc_precmd() {
+    vcs_info
+    RPS1="%B$vcs_info_msg_0_%b"
+    set-title "$(print -Pn "%n@%m %~")"
+}
+
+prompt_marc_preexec() {
+    set-title "$(print -Pn "%n@%m %~ %# ")${1}"
+}
+
+prompt_marc_setup () {
+    autoload -Uz vcs_info set-title
+    add-zsh-hook precmd prompt_marc_precmd   
+    add-zsh-hook preexec prompt_marc_preexec   
+
+    zstyle ':vcs_info:*' check-for-changes true
+    zstyle ':vcs_info:*' get-revision true
+    zstyle ':vcs_info:*' formats "%s:%R|%S@%b %m%u%c"
+    zstyle ':vcs_info:*' actionformats "%s:%r|%S@%b (%a) %m%u%c"
+
+    prompt_opts=( )
+    PS1='%B%? %n@%M:%~ %# %b'
+}
+
+prompt_marc_setup "$@"

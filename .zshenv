@@ -1,5 +1,3 @@
-#!/bin/sh -l
-
 if command -v nvim > /dev/null
 then
 	export VISUAL=nvim 
@@ -13,12 +11,11 @@ fi
 
 if command -v ex > /dev/null
 then
-	export EDITOR=ex 
+	export EDITOR=nvim 
 elif command -v ed > /dev/null
 then
-	export EDITOR=ed
+	export EDITOR=vim
 fi
-export FCEDIT="$VISUAL"
 
 if command -v less > /dev/null
 then
@@ -28,10 +25,5 @@ then
 	export PAGER=more
 fi
 
-if test -r "$HOME"/.shrc
-then
-	export ENV="$HOME"/.shrc
-fi
-
-PATH=$HOME/.nodenv/bin:$HOME/.pyenv/bin:$HOME/.local/bin/:$PATH
-export MANPATH="$HOME"/.local/share/man:
+ NULLCMD=${PAGER:-cat}
+ READNULLCMD=${PAGER:-more}

@@ -1,4 +1,3 @@
-#!/bin/sh --
+#!/bin/sh
 
-"${VISUAL:-${EDITOR:-vi}}" "$@"
-
+"${VISUAL:-vi}" "$@"

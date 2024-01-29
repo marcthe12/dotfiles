@@ -1,9 +1,6 @@
-#!/bin/bash -l
+#
+# ~/.bash_profile
+#
 
-for i in  ~/.profile ~/.bashrc
-do
-	if test -f "$i"
-	then
-		. "$i"
-	fi
-done
+[[ -f ~/.profile ]] && . ~/.profile
+[[ -f ~/.bashrc ]] && . ~/.bashrc

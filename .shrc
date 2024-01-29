@@ -13,47 +13,65 @@ set -o nounset
 set -o noclobber
 set -o ignoreeof
 
-PS1='$(sh-prompt $?)'
-PS2="> "
-PS3='? '
-PS4='+ '
-
-HISTSIZE=65535
-HISTFILE=/dev/null
-
-du(){
+unalias du 2> /dev/null
+du() (
         set -- -k "$@"
-        command du "$@"
-}
+        exec du "$@"
+)
 
-df(){
+unalias df 2> /dev/null
+df() (
         set -- -k "$@"
-        command df "$@"
-}
+        exec df "$@"
+)
 
-egrep() {
-        set -- -E "$@"
-        grep "$@"
-}
+unalias ls 2> /dev/null
+ls() (
+        set -- -Fkq "$@"
+        exec ls  "$@"
+)
 
-fgrep() {
-        set -- -F "$@"
-        grep "$@"
-}
+for cmd in egrep fgrep dir vdir which
+do
+	unalias "$cmd" 2> /dev/null
+	if command -v "$cmd" > /dev/null
+	then
+		eval "$(cat <<-EOF
+			$cmd(){
+				printf "%s: %s: command is disabled.\n" \
+					"$0" "$cmd" >&2
+				return 1
+			}
+			EOF
+		)"
+	fi
+done
 
-ls(){
-        set -- -Fk "$@"
-        command ls  "$@"
-}
+sudo() (
+	command sudo -nv 2> /dev/null
+	exec sudo "$@"
+)
 
-venvon(){
-	. "${1:-venv}/bin/activate"
-}
+sudoedit() (
+	sudo -e "$@"
+)
 
-if test -n ${TTY-} && test -t 0
+if command -v pyenv > /dev/null
+then
+	eval "$(pyenv init -)"
+fi
+
+if command -v nodenv > /dev/null
+then
+	eval "$(nodenv init -)"
+fi
+
+if test -n "${TTY-}" && test -t 0
 then
 	TTY=$(tty)
 	export TTY
-	export GPG_TTY=$TTY
+	export GPG_TTY="$TTY"
 fi
+
+PS1='$(sh-prompt $?)'
 

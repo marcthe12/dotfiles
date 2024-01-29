@@ -1,0 +1,4 @@
+#!zsh
+
+"${VISUAL:-${EDITOR:-vi}}" "$@"
+
