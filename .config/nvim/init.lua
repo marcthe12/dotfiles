@@ -1,3 +1,10 @@
+require "paq" {
+	"savq/paq-nvim", -- Let Paq manage itself
+	"savq/melange-nvim",
+	"neovim/nvim-lspconfig",
+	{ 'nvim-treesitter/nvim-treesitter', build = ':TSUpdate' },
+}:sync()
+
 vim.opt.number = true
 vim.opt.relativenumber = true
 vim.opt.title = true
@@ -6,6 +13,8 @@ vim.opt.signcolumn = 'yes'
 
 vim.g.netrw_keepdir = 0
 vim.g.netrw_banner = 0
+
+vim.opt.clipboard=unnamedplus
 
 vim.cmd.colorscheme 'melange'
 vim.opt.colorcolumn = '+1'
@@ -16,13 +25,6 @@ vim.opt.foldenable = false
 
 vim.opt.omnifunc = "syntaxcomplete#Complete"
 vim.opt.completeopt = {'menu', 'noinsert'}
-
-require "paq" {
-	"savq/paq-nvim", -- Let Paq manage itself
-	"savq/melange-nvim",
-	"neovim/nvim-lspconfig",
-	{ 'nvim-treesitter/nvim-treesitter', build = ':TSUpdate' },
-}:sync()
 
 require'nvim-treesitter.configs'.setup {
 	highlight = {
