@@ -1,0 +1,30 @@
+#!/bin/sh
+
+exec < /dev/tty
+
+if tput hs
+then
+	tsl="$(tput tsl)"
+	fsl="$(tput fsl)"
+	hs=1
+else
+	case ${TERM} in
+		xterm*|rxvt*)
+			tsl="$(printf "\x1b]0;")"
+			fsl="$(printf "\a")"
+			hs=1
+			;;
+		screen*)
+			tsl="$(printf "\x1b_")"
+			fsl="$(printf "\x1b\\")"
+			hs=1
+			;;
+	esac
+fi
+
+if test "$hs" = 1
+then
+	printf "%s" "$tsl"
+	printf "%s" "$@"
+	printf "%s" "$fsl"
+fi
