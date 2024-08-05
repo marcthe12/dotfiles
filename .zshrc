@@ -1,6 +1,6 @@
 #!/usr/bin/zsh -i
 
-zmodload zsh/zprof 
+zmodload zsh/zprof
 
 bindkey -v
 autoload -Uz edit-command-line
@@ -14,13 +14,22 @@ setopt hist_ignore_all_dups hist_save_no_dups hist_reduce_blanks share_history e
 
 fpath=(~/.zfunc $fpath)
 
+alias diff='diff --color=auto'
+alias ls='ls -F --color=auto'
+alias grep='grep --color=auto'
+alias sudo='sudo '
+alias run0='run0 '
+
 autoload -Uz compinit promptinit
 zmodload zsh/complist
 zstyle ':completion:*' menu select
+zstyle ':completion:*' verbose yes
+zstyle ':completion:*' completer _expand _complete _ignored _approximate
 zstyle ':completion:*' group-name ''
-zstyle ':completion:*' completer _extensions _expand_alias  _complete _approximate
-zstyle ':completion:*:*:*:*:descriptions' format '%B%d%b'
-zstyle ':completion:*:*:*:*:corrections' format '%B%d (errors: %e)%b'
+zstyle ':completion:*:descriptions' format '%B%d%b'
+zstyle ':completion:*:messages' format '%d'
+zstyle ':completion:*:warnings' format 'No matches for: %d'
+zstyle ':completion:*:corrections' format '%B%d (errors: %e)%b'
 zstyle ':completion:*' list-colors "${(s.:.)LS_COLORS}"
 zstyle ':completion:*' complete-options true
 zstyle ':completion:*' rehash true
@@ -36,7 +45,6 @@ promptinit
 prompt marc
 add-zsh-hook -Uz precmd osc7_prompt
 
-
 setopt no_clobber
 setopt extendedglob
 
@@ -49,15 +57,4 @@ alias help=run-help
 
 autoload -Uz e v p bell
 
-path=( ~/.pyenv/bin ~/.nodenv/bin $path )
-
-if command -v pyenv > /dev/null
-then
-	eval "$(pyenv init -)"
-fi
-
-if command -v nodenv > /dev/null
-then
-	eval "$(nodenv init -)"
-fi
 
