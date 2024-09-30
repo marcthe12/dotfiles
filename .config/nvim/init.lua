@@ -14,6 +14,7 @@ require "paq" {
 	{ 'hrsh7th/nvim-cmp' },
 	{ 'hrsh7th/cmp-nvim-lsp' },
 	{ "stevearc/conform.nvim" },
+	{ 'stevearc/dressing.nvim' },
 	{ "j-hui/fidget.nvim" },
 }:sync()
 
@@ -51,6 +52,9 @@ vim.opt.showtabline = 2
 
 -- Bug in Wayland + netrw
 -- vim.opt.clipboard = 'unnamedplus'
+vim.keymap.set({ 'n', 'x' }, '<leader>y', '"+y')
+vim.keymap.set('n', '<leader>p', '"+p')
+vim.keymap.set('x', '<leader>p', '"+P')
 
 vim.cmd.colorscheme 'melange'
 vim.opt.colorcolumn = '+1'
@@ -178,6 +182,73 @@ require 'nvim-treesitter.configs'.setup {
 	auto_install = true,
 }
 
+function Set(list)
+	local set = {}
+	for _, l in ipairs(list)
+	do
+		set[l] = true
+	end
+	return set
+end
+
+function Filepicker(dir)
+	vim.fs.normalize(dir)
+	local function action(result)
+			if result[2] == "directory" then
+				Filepicker(result[1])
+			elseif result[2] == "link"
+			then
+				action({ result[3], result[4] })
+			else
+				vim.cmd("edit " .. result[1])
+			end
+	end
+	local function format(tbl)
+		if tbl[2] == "directory" then
+			return tbl[1] .. "/"
+		elseif tbl[2] == "link" then
+			return tbl[1] .. " -> " .. format({ tbl[3], tbl[4] })
+		else
+			return tbl[1]
+		end
+	end
+	local file_iter = vim.iter(vim.fs.dir(dir, { depth = 1 }))
+	local files = file_iter:totable()
+	table.insert(files, 1, {"..", "link"})
+	files = vim.tbl_map(function(tbl)
+		if tbl[2] == "link" then
+			local path = vim.fs.joinpath(dir, tbl[1])
+			tbl[#tbl + 1] = vim.uv.fs_realpath(path)
+			if tbl[3] then
+				tbl[#tbl + 1] = vim.uv.fs_stat(tbl[3]).type
+			else
+				tbl[#tbl + 1] = "broken"
+			end
+		end
+		return tbl
+	end, files)
+	files = vim.tbl_filter(function(tbl)
+		if tbl[2] == "link" then
+			return Set { "file", "directory" }[tbl[4]]
+		else
+			return Set { "file", "directory" }[tbl[2]]
+		end
+	end, files)
+	vim.ui.select(files, {
+		prompt = 'Open: ',
+		format_item = format
+	}, function(result)
+		if result then
+			result[1] = vim.fs.joinpath(dir, result[1])
+			action(result)
+		end
+	end)
+end
+
+vim.keymap.set('n', '<leader>o', function()
+	Filepicker(vim.fn.getcwd())
+end)
+
 vim.keymap.set('n', '<leader>q', vim.diagnostic.setloclist)
 
 require("conform").setup {
@@ -200,14 +271,6 @@ vim.api.nvim_create_user_command("Format", function(args)
 	end
 	require("conform").format({ async = true, lsp_format = "fallback", range = range })
 end, { range = true })
-
-vim.api.nvim_create_user_command("Scratch", function(args)
-	local buf = vim.api.nvim_create_buf(true, true)
-	print(vim.inspect(args))
-	if #args.fargs then
-		vim.api.nvim_buf_set_name(buf, args.fargs[1])
-	end
-end, { nargs = '?', bar = true })
 
 vim.keymap.set('n', '<leader>b', function()
 	local bufs = vim.tbl_filter(
@@ -263,7 +326,7 @@ vim.api.nvim_create_autocmd('LspAttach', {
 		end, opts)
 		vim.keymap.set('n', '<leader>D', vim.lsp.buf.type_definition, opts)
 		vim.keymap.set('n', '<leader>rn', vim.lsp.buf.rename, opts)
-		vim.keymap.set({ 'n', 'v' }, '<space>ca', vim.lsp.buf.code_action, opts)
+		vim.keymap.set({ 'n', 'v' }, '<leader>ca', vim.lsp.buf.code_action, opts)
 		vim.keymap.set('n', 'gr', vim.lsp.buf.references, opts)
 
 		vim.lsp.inlay_hint.enable()

@@ -1,4 +1,8 @@
 [binaries]
 c = 'gcc'   
 cpp = 'g++'
+c_ld = 'bfd'
+cpp_ldd = 'bfd'
+ar = 'ar'
+strip = 'strip'
 

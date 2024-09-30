@@ -1,10 +1,12 @@
 #!zsh
 emulate -L zsh
 
-if tput hs
+zmodload zsh/terminfo
+
+if [[ $teminfo[hs] == "yes" ]]
 then
-	tsl="$(tput tsl)"
-	fsl="$(tput fsl)"
+	tsl="$terminfo[tsl]"
+	fsl="$terminfo[fsl]"
 	hs=1
 else
 	case ${TERM} in
@@ -21,7 +23,7 @@ else
 	esac
 fi
 
-if test "$hs" = 1
+if [[ "$hs" == 1 ]]
 then
 	printf "%s" "$tsl"
 	printf "%s" "$@"
