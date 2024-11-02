@@ -1,6 +1,0 @@
-#!/bin/sh
-
-export GIT_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/dotman/"
-export GIT_WORK_TREE="$HOME"
-
-exec git "$@"

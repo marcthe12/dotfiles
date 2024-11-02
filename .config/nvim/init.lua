@@ -1,23 +1,6 @@
 vim.g.mapleader = ' '
 vim.g.maplocalleader = ' '
 
-require "paq" {
-	{ "savq/paq-nvim" },
-	{ "savq/melange-nvim" },
-	{ 'nvim-treesitter/nvim-treesitter',  build = ':TSUpdate' },
-	{ 'williamboman/mason.nvim' },
-	{ 'williamboman/mason-lspconfig.nvim' },
-	{ 'neovim/nvim-lspconfig' },
-	{ 'p00f/clangd_extensions.nvim' },
-	{ 'folke/lazydev.nvim' },
-	{ 'mrcjkb/rustaceanvim' },
-	{ 'hrsh7th/nvim-cmp' },
-	{ 'hrsh7th/cmp-nvim-lsp' },
-	{ "stevearc/conform.nvim" },
-	{ 'stevearc/dressing.nvim' },
-	{ "j-hui/fidget.nvim" },
-}:sync()
-
 vim.opt.number = true
 vim.opt.relativenumber = true
 vim.opt.title = true

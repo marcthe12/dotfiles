@@ -25,9 +25,13 @@ then
 	export PAGER=more
 fi
 
- NULLCMD=${PAGER:-cat}
- READNULLCMD=${PAGER:-more}
-. "$HOME/.cargo/env"
+NULLCMD=${PAGER:-cat}
+READNULLCMD=${PAGER:-more}
+
+if test -f "$HOME"/.cargo/env
+then
+	. "$HOME/.cargo/env"
+fi
 
 export XDG_CONFIG_HOME="$HOME/.config/"
 export XDG_CACHE_HOME="$HOME/.cache/"

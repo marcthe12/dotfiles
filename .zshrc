@@ -36,6 +36,8 @@ zstyle ':completion:*' rehash true
 zstyle ':completion:*:*:-command-:*:*' group-order alias builtins functions commands
 compinit
 
+compdef dotfiles=git
+
 bindkey -M menuselect 'h' vi-backward-char
 bindkey -M menuselect 'k' vi-up-line-or-history
 bindkey -M menuselect 'l' vi-forward-char
@@ -43,7 +45,6 @@ bindkey -M menuselect 'j' vi-down-line-or-history
 
 promptinit
 prompt marc
-add-zsh-hook -Uz precmd osc7_prompt
 
 setopt no_clobber
 setopt extendedglob
