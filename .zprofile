@@ -1,21 +1,7 @@
+#!zsh -l
 
-typeset -U PATH path
-
-path=( $HOME/.local/bin $path )
-
-if test -d /usr/lib/flatpak-xdg-utils/
+if test -f "$HOME"/.profile
 then
-	path=( /usr/lib/flatpak-xdg-utils $path )
+	emulate sh -c '. $HOME/.profile'
 fi
 
-if test -d "$HOME/.local/opt/go/bin"
-then
-	path=( "$HOME/.local/opt/go/bin" $path )
-fi
-
-if test -d "$HOME/go/bin"
-then
-	path=( "$HOME/go/bin" $path )
-fi
-
-export PATH

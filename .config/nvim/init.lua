@@ -33,13 +33,10 @@ vim.opt.signcolumn = 'yes'
 vim.opt.statuscolumn = "%!v:lua.Line.column()"
 vim.opt.showtabline = 2
 
--- Bug in Wayland + netrw
--- vim.opt.clipboard = 'unnamedplus'
 vim.keymap.set({ 'n', 'x' }, '<leader>y', '"+y')
 vim.keymap.set('n', '<leader>p', '"+p')
 vim.keymap.set('x', '<leader>p', '"+P')
 
-vim.cmd.colorscheme 'melange'
 vim.opt.colorcolumn = '+1'
 
 vim.opt.hlsearch = true
@@ -177,14 +174,14 @@ end
 function Filepicker(dir)
 	vim.fs.normalize(dir)
 	local function action(result)
-			if result[2] == "directory" then
-				Filepicker(result[1])
-			elseif result[2] == "link"
-			then
-				action({ result[3], result[4] })
-			else
-				vim.cmd("edit " .. result[1])
-			end
+		if result[2] == "directory" then
+			Filepicker(result[1])
+		elseif result[2] == "link"
+		then
+			action({ result[3], result[4] })
+		else
+			vim.cmd("edit " .. result[1])
+		end
 	end
 	local function format(tbl)
 		if tbl[2] == "directory" then
@@ -197,7 +194,7 @@ function Filepicker(dir)
 	end
 	local file_iter = vim.iter(vim.fs.dir(dir, { depth = 1 }))
 	local files = file_iter:totable()
-	table.insert(files, 1, {"..", "link"})
+	table.insert(files, 1, { "..", "link" })
 	files = vim.tbl_map(function(tbl)
 		if tbl[2] == "link" then
 			local path = vim.fs.joinpath(dir, tbl[1])
@@ -239,10 +236,12 @@ require("conform").setup {
 		python = { "isort", "black" },
 	},
 }
+
 vim.opt.formatexpr = "v:lua.require'conform'.formatexpr()"
 vim.keymap.set('n', '<leader>f', function()
 	require('conform').format { async = true, lsp_format = "fallback", }
 end)
+
 vim.api.nvim_create_user_command("Format", function(args)
 	local range = nil
 	if args.count ~= -1 then
@@ -288,13 +287,16 @@ vim.keymap.set('n', '<leader>t', function()
 end)
 
 vim.api.nvim_create_autocmd('LspAttach', {
-	group = vim.api.nvim_create_augroup('UserLspConfig', {}),
 	callback = function(ev)
 		local opts = { buffer = ev.buf }
-		vim.keymap.set('n', 'gD', vim.lsp.buf.declaration, opts)
-		vim.keymap.set('n', 'gd', vim.lsp.buf.definition, opts)
-		vim.keymap.set('n', 'gi', vim.lsp.buf.implementation, opts)
-		vim.keymap.set('n', '<C-k>', vim.lsp.buf.signature_help, opts)
+
+		vim.keymap.set('n', 'grn', vim.lsp.buf.rename, opts)
+		vim.keymap.set({ 'n', 'v' }, 'gra', vim.lsp.buf.code_action, opts)
+		vim.keymap.set('n', 'grr', vim.lsp.buf.references, opts)
+		vim.keymap.set('n', 'gri', vim.lsp.buf.implementation, opts)
+		vim.keymap.set('n', 'gO', vim.lsp.buf.document_symbol, opts)
+		vim.keymap.set('n', '<C-s>', vim.lsp.buf.signature_help, opts)
+
 		vim.keymap.set('n', '<leader>wa', vim.lsp.buf.add_workspace_folder, opts)
 		vim.keymap.set('n', '<leader>wr', vim.lsp.buf.remove_workspace_folder, opts)
 		vim.keymap.set('n', '<leader>wl', function()
@@ -307,12 +309,28 @@ vim.api.nvim_create_autocmd('LspAttach', {
 				end
 			end)
 		end, opts)
-		vim.keymap.set('n', '<leader>D', vim.lsp.buf.type_definition, opts)
-		vim.keymap.set('n', '<leader>rn', vim.lsp.buf.rename, opts)
-		vim.keymap.set({ 'n', 'v' }, '<leader>ca', vim.lsp.buf.code_action, opts)
-		vim.keymap.set('n', 'gr', vim.lsp.buf.references, opts)
 
 		vim.lsp.inlay_hint.enable()
+
+		vim.api.nvim_create_autocmd({ 'CursorHold', 'CursorHoldI' }, {
+			buffer = ev.buf,
+			callback = function ()
+				vim.lsp.buf.document_highlight()
+			end,
+		})
+
+		vim.api.nvim_create_autocmd({ 'CursorMoved', 'CursorMovedI' }, {
+			buffer = ev.buf,
+			callback = function ()
+				vim.lsp.buf.clear_references()
+			end,
+		})
+
+		vim.api.nvim_create_autocmd('LspDetach', {
+			callback = function(event)
+				vim.lsp.buf.clear_references()
+			end,
+		})
 	end,
 })
 
@@ -345,15 +363,6 @@ require('mason-lspconfig').setup {
 			}
 		end,
 		rust_analyzer = function() end,
-		clangd = function()
-			require("lspconfig").clangd.setup {
-				capabilities = capabilities,
-				on_attach = function()
-					require("clangd_extensions.inlay_hints").setup_autocmd()
-					require("clangd_extensions.inlay_hints").set_inlay_hints()
-				end
-			}
-		end
 	}
 }
 
@@ -381,4 +390,4 @@ cmp.setup({
 	})
 })
 
-require("fidget").setup {}
+-- require("fidget").setup {}

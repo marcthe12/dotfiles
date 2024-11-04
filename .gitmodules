@@ -40,3 +40,6 @@
 [submodule "lazydev"]
 	path = .local/share/nvim/site/pack/plugins/start/lazydev
 	url = https://github.com/folke/lazydev.nvim
+[submodule "zsh-completions"]
+	path = /home/mboocha/.zfunc/zsh-completions
+	url = https://github.com/zsh-users/zsh-completions.git
