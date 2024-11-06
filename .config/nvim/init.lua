@@ -45,6 +45,9 @@ vim.keymap.set('n', '<Esc>', vim.cmd.nohlsearch)
 vim.keymap.set('n', '<S-Right>', vim.cmd.bnext)
 vim.keymap.set('n', '<S-Left>', vim.cmd.bprev)
 
+
+---@param buffer integer
+---@return string
 local function get_formated_bufname(buffer)
 	buffer = buffer or 0
 
@@ -64,7 +67,9 @@ local function get_formated_bufname(buffer)
 	return name
 end
 
+---@class Line
 Line = {
+	---@return string
 	status = function()
 		local buffer = vim.api.nvim_win_get_buf(vim.g.statusline_winid)
 		local buftype = vim.bo[buffer].buftype
@@ -97,6 +102,7 @@ Line = {
 		}, " ")
 	end,
 
+	---@return string
 	tab = function()
 		local tabs = vim.api.nvim_list_tabpages()
 		local format = vim.tbl_map(function(tab)
@@ -120,6 +126,7 @@ Line = {
 		return tabline .. '%#TabLineFill#%T'
 	end,
 
+	---@return string
 	column = function()
 		local col = {}
 		if vim.opt.foldenable:get() then
@@ -162,15 +169,9 @@ require 'nvim-treesitter.configs'.setup {
 	auto_install = true,
 }
 
-function Set(list)
-	local set = {}
-	for _, l in ipairs(list)
-	do
-		set[l] = true
-	end
-	return set
-end
+local set = require 'set'
 
+---@param dir string
 function Filepicker(dir)
 	vim.fs.normalize(dir)
 	local function action(result)
@@ -208,10 +209,11 @@ function Filepicker(dir)
 		return tbl
 	end, files)
 	files = vim.tbl_filter(function(tbl)
+		local valid = set:new { "file", "directory" }
 		if tbl[2] == "link" then
-			return Set { "file", "directory" }[tbl[4]]
+			return valid:has(tbl[4])
 		else
-			return Set { "file", "directory" }[tbl[2]]
+			return valid:has(tbl[2])
 		end
 	end, files)
 	vim.ui.select(files, {
@@ -292,6 +294,7 @@ vim.api.nvim_create_autocmd('LspAttach', {
 
 		vim.keymap.set('n', 'grn', vim.lsp.buf.rename, opts)
 		vim.keymap.set({ 'n', 'v' }, 'gra', vim.lsp.buf.code_action, opts)
+		vim.keymap.set({ 'n', 'v' }, 'grl', vim.lsp.codelens.run, opts)
 		vim.keymap.set('n', 'grr', vim.lsp.buf.references, opts)
 		vim.keymap.set('n', 'gri', vim.lsp.buf.implementation, opts)
 		vim.keymap.set('n', 'gO', vim.lsp.buf.document_symbol, opts)
@@ -312,55 +315,141 @@ vim.api.nvim_create_autocmd('LspAttach', {
 
 		vim.lsp.inlay_hint.enable()
 
+		vim.lsp.codelens.refresh({ bufnr = ev.buf })
+
+		vim.api.nvim_create_autocmd({ 'CursorHold', 'InsertLeave' }, {
+			buffer = ev.buf,
+			callback = function()
+				vim.lsp.codelens.refresh({ bufnr = ev.buf })
+			end,
+		})
+
 		vim.api.nvim_create_autocmd({ 'CursorHold', 'CursorHoldI' }, {
 			buffer = ev.buf,
-			callback = function ()
+			callback = function()
 				vim.lsp.buf.document_highlight()
 			end,
 		})
 
 		vim.api.nvim_create_autocmd({ 'CursorMoved', 'CursorMovedI' }, {
 			buffer = ev.buf,
-			callback = function ()
+			callback = function()
 				vim.lsp.buf.clear_references()
 			end,
 		})
 
 		vim.api.nvim_create_autocmd('LspDetach', {
-			callback = function(event)
+			callback = function()
 				vim.lsp.buf.clear_references()
 			end,
 		})
 	end,
 })
 
-local capabilities = vim.tbl_deep_extend(
-	"force",
-	{},
-	vim.lsp.protocol.make_client_capabilities(),
-	require('cmp_nvim_lsp').default_capabilities()
-)
+--- Setup LSP Server with lspconfig and nvim-cmp
+---@param server_name string
+---@param settings ?lspconfig.Config
+local function setupLSP(server_name, settings)
+	settings = settings or {}
+	settings.capabilities = vim.tbl_deep_extend(
+		"force",
+		{},
+		vim.lsp.protocol.make_client_capabilities(),
+		require('cmp_nvim_lsp').default_capabilities()
+	)
+	local config = require("lspconfig")
+	require("lspconfig")[server_name].setup(settings)
+end
+
 
 require('mason').setup {}
 require('mason-lspconfig').setup {
 	ensure_installed = { 'lua_ls' },
 	handlers = {
 		function(server_name)
-			require("lspconfig")[server_name].setup {
-				capabilities = capabilities
-			}
+			setupLSP(server_name)
 		end,
 		lua_ls = function()
-			require("lspconfig").lua_ls.setup {
+			setupLSP("lua_ls", {
 				settings = {
 					Lua = {
 						completion = {
 							callSnippet = 'Replace',
 						},
-						diagnostics = { disable = { 'missing-fields' } },
+						diagnostics = {
+							disable = { 'missing-fields' }
+						},
+						hint = {
+							enable = true
+						}
 					},
 				}
-			}
+			})
+		end,
+		gopls = function()
+			setupLSP("gopls", {
+				settings = {
+					gopls = {
+						hints = {
+							rangeVariableTypes = true,
+							parameterNames = true,
+							constantValues = true,
+							assignVariableTypes = true,
+							compositeLiteralFields = true,
+							compositeLiteralTypes = true,
+							functionTypeParameters = true,
+						},
+						codelenses ={
+							gc_details = true,
+						}
+					},
+				}
+			})
+		end,
+		clangd = function()
+			setupLSP("clangd", {
+				settings = {
+					clangd = {
+						InlayHints = {
+							Designators = true,
+							Enabled = true,
+							ParameterNames = true,
+							DeducedTypes = true,
+						},
+						fallbackFlags = { "-std=c++20" },
+					},
+				}
+			})
+		end,
+		ts_ls = function()
+			setupLSP("ts_ls", {
+				settings = {
+					typescript = {
+						inlayHints = {
+							includeInlayParameterNameHints = "all",
+							includeInlayParameterNameHintsWhenArgumentMatchesName = false,
+							includeInlayFunctionParameterTypeHints = true,
+							includeInlayVariableTypeHints = true,
+							includeInlayVariableTypeHintsWhenTypeMatchesName = false,
+							includeInlayPropertyDeclarationTypeHints = true,
+							includeInlayFunctionLikeReturnTypeHints = true,
+							includeInlayEnumMemberValueHints = true,
+						},
+					},
+					javascript = {
+						inlayHints = {
+							includeInlayParameterNameHints = "all",
+							includeInlayParameterNameHintsWhenArgumentMatchesName = false,
+							includeInlayFunctionParameterTypeHints = true,
+							includeInlayVariableTypeHints = true,
+							includeInlayVariableTypeHintsWhenTypeMatchesName = false,
+							includeInlayPropertyDeclarationTypeHints = true,
+							includeInlayFunctionLikeReturnTypeHints = true,
+							includeInlayEnumMemberValueHints = true,
+						},
+					},
+				}
+			})
 		end,
 		rust_analyzer = function() end,
 	}
