@@ -22,15 +22,9 @@
 [submodule "conform"]
 	path = .local/share/nvim/site/pack/plugins/start/conform
 	url = https://github.com/stevearc/conform.nvim
-[submodule "dressing.nvim"]
-	path = .local/share/nvim/site/pack/plugins/start/dressing.nvim
-	url = https://github.com/stevearc/dressing.nvim
 [submodule "fidget"]
 	path = .local/share/nvim/site/pack/plugins/start/fidget.nvim
 	url = https://github.com/j-hui/fidget.nvim
-[submodule "malange"]
-	path = .local/share/nvim/site/pack/plugins/start/malange
-	url = https://github.com/savq/melange-nvim.git
 [submodule "mason"]
 	path = .local/share/nvim/site/pack/plugins/start/mason
 	url = https://github.com/williamboman/mason.nvim
