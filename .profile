@@ -11,7 +11,7 @@ append_path () {
 
 for i in "$HOME"/.local/bin "$HOME"/.local/opt/*/bin "$HOME/go/bin"
 do
-	if test -d "$HOME/.local/opt/go/bin"
+	if test -d "$i"
 	then
 		append_path "$i"
 	fi
