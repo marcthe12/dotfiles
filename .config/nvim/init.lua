@@ -3,15 +3,15 @@ vim.loader.enable()
 vim.g.mapleader = ' '
 vim.g.maplocalleader = ' '
 
-vim.opt.number = true
-vim.opt.relativenumber = true
-vim.opt.title = true
-vim.opt.termguicolors = true
+vim.o.number = true
+vim.o.relativenumber = true
+vim.o.title = true
+vim.o.termguicolors = true
 
 vim.opt.shortmess:append("sI")
 
-vim.opt.splitright = true
-vim.opt.splitbelow = true
+vim.o.splitright = true
+vim.o.splitbelow = true
 
 vim.g.netrw_keepdir = 0
 vim.g.netrw_banner = 0
@@ -21,38 +21,44 @@ vim.g.loaded_node_provider = 0
 vim.g.loaded_perl_provider = 0
 vim.g.loaded_python_provider = 0
 
-vim.opt.list = true
-vim.opt.mouse = 'a'
+vim.o.list = true
+vim.o.mouse = 'a'
 
-vim.opt.foldexpr = 'v:lua.vim.treesitter.foldexpr()'
-vim.opt.foldmethod = "expr"
-vim.opt.foldcolumn = "auto"
+vim.o.foldexpr = 'v:lua.vim.treesitter.foldexpr()'
+vim.o.foldmethod = "expr"
+vim.o.foldcolumn = "auto"
 
-vim.opt.cursorline = true
-vim.opt.laststatus = 2
-vim.opt.statusline = "%!v:lua.Line.status()"
-vim.opt.tabline = "%!v:lua.Line.tab()"
-vim.opt.signcolumn = 'yes'
-vim.opt.statuscolumn = "%!v:lua.Line.column()"
-vim.opt.showtabline = 2
+vim.o.cursorline = true
+vim.o.laststatus = 2
+vim.o.statusline = "%!v:lua.require'lines'.status()"
+vim.o.tabline = "%!v:lua.require'lines'.tab()"
+vim.o.signcolumn = 'yes'
+vim.opt.fillchars = {
+	foldopen = "⌵",
+	foldclose = "›",
+	eob = " "
+}
+
+vim.o.showtabline = 2
 
 vim.keymap.set({ 'n', 'x' }, '<leader>y', '"+y')
 vim.keymap.set('n', '<leader>p', '"+p')
 vim.keymap.set('x', '<leader>p', '"+P')
 
-vim.opt.colorcolumn = '+1'
+vim.o.colorcolumn = '+1'
 
-vim.opt.hlsearch = true
-vim.keymap.set('n', '<Esc>', vim.cmd.nohlsearch)
+vim.o.hlsearch = true
+vim.keymap.set('n', '<Esc>', function()
+	vim.cmd.nohlsearch()
+end)
 
-vim.keymap.set('n', '<S-Right>', vim.cmd.bnext)
-vim.keymap.set('n', '<S-Left>', vim.cmd.bprev)
-
-
-Line = require 'lines'
+vim.keymap.set('n', '<leader>t', function()
+	vim.cmd.vsplit()
+	vim.cmd.terminal()
+end)
 
 vim.keymap.set('n', '<leader>o', function()
-	vim.cmd.Lexplore(vim.fn.expand "%:p:h")
+	vim.cmd.Lexplore()
 end)
 
 vim.keymap.set('n', '<leader>O', function()
@@ -67,11 +73,13 @@ require 'nvim-treesitter.configs'.setup {
 	auto_install = true,
 }
 
-vim.keymap.set('n', '<leader>q', vim.diagnostic.setloclist)
+vim.keymap.set('n', '<leader>q', function()
+	vim.diagnostic.setloclist()
+end)
 
 require 'conform'.setup {}
 
-vim.opt.formatexpr = "v:lua.require'conform'.formatexpr()"
+vim.o.formatexpr = "v:lua.require'conform'.formatexpr()"
 vim.keymap.set('n', '<leader>f', function()
 	require('conform').format { async = true, lsp_format = "fallback", }
 end)
@@ -88,93 +96,82 @@ vim.api.nvim_create_user_command("Format", function(args)
 	require("conform").format { async = true, lsp_format = "fallback", range = range }
 end, { range = true })
 
-vim.keymap.set('n', '<leader>b', function()
-	local bufs = vim.tbl_filter(
-		function(buffer)
-			return vim.bo[buffer].buflisted
-		end,
-		vim.api.nvim_list_bufs()
-	)
-	vim.ui.select(bufs, {
-		prompt = 'Buffer: ',
-		format_item = Line.get_formated_bufname
+vim.keymap.set({ 'n', 'v' }, 'grl', function()
+	vim.lsp.codelens.run()
+end)
+
+vim.keymap.set('n', '<leader>wa', function()
+	vim.lsp.buf.add_workspace_folder()
+end)
+
+vim.keymap.set('n', '<leader>wr', function()
+	vim.lsp.buf.remove_workspace_folder()
+end)
+
+vim.keymap.set('n', '<leader>wl', function()
+	local dir = vim.lsp.buf.list_workspace_folders()
+	vim.ui.select(dir, {
+		prompt = 'Workspace Dir: ',
 	}, function(result)
 		if result then
-			vim.api.nvim_set_current_buf(result)
+			vim.api.nvim_set_current_dir(result)
 		end
 	end)
 end)
 
-vim.keymap.set('n', '<leader>t', function()
-	local tabs = vim.api.nvim_list_tabpages()
-	vim.ui.select(tabs, {
-		prompt = 'Tab: ',
-		format_item = function(tab)
-			local buffer = vim.api.nvim_win_get_buf(vim.api.nvim_tabpage_get_win(tab))
-			return Line.get_formated_bufname(buffer)
-		end
-	}, function(result)
-		if result then
-			vim.api.nvim_set_current_tabpage(result)
-		end
-	end)
-end)
+vim.api.nvim_create_user_command("Symbols", function(args)
+	if args.args == ""
+	then
+		vim.lsp.buf.workspace_symbol()
+	else
+		vim.lsp.buf.workspace_symbol(args.args)
+	end
+end, { nargs = "?" })
 
 vim.api.nvim_create_autocmd('LspAttach', {
 	callback = function(ev)
 		local opts = { buffer = ev.buf }
+		local client = vim.lsp.get_client_by_id(ev.data.client_id)
 
-		vim.keymap.set('n', 'grn', vim.lsp.buf.rename, opts)
-		vim.keymap.set({ 'n', 'v' }, 'gra', vim.lsp.buf.code_action, opts)
-		vim.keymap.set({ 'n', 'v' }, 'grl', vim.lsp.codelens.run, opts)
-		vim.keymap.set('n', 'grr', vim.lsp.buf.references, opts)
-		vim.keymap.set('n', 'gri', vim.lsp.buf.implementation, opts)
-		vim.keymap.set('n', 'gO', vim.lsp.buf.document_symbol, opts)
-		vim.keymap.set('n', '<C-s>', vim.lsp.buf.signature_help, opts)
+		if client and client.supports_method(vim.lsp.protocol.Methods.textDocument_inlayHint) then
+			vim.lsp.inlay_hint.enable()
+		end
 
-		vim.keymap.set('n', '<leader>wa', vim.lsp.buf.add_workspace_folder, opts)
-		vim.keymap.set('n', '<leader>wr', vim.lsp.buf.remove_workspace_folder, opts)
-		vim.keymap.set('n', '<leader>wl', function()
-			local dir = vim.lsp.buf.list_workspace_folders()
-			vim.ui.select(dir, {
-				prompt = 'Workspace Dir: ',
-			}, function(result)
-				if result then
-					vim.api.nvim_set_current_dir(result)
-				end
-			end)
-		end, opts)
+		if client and client.supports_method(vim.lsp.protocol.Methods.textDocument_documentHighlight) then
+			local highlight_augroup = vim.api.nvim_create_augroup('lsp-highlight',
+				{ clear = false })
+			vim.api.nvim_create_autocmd({ 'CursorHold', 'CursorHoldI' }, {
+				buffer = ev.buf,
+				group = highlight_augroup,
+				callback = vim.lsp.buf.document_highlight,
+			})
 
-		vim.lsp.inlay_hint.enable()
+			vim.api.nvim_create_autocmd({ 'CursorMoved', 'CursorMovedI' }, {
+				buffer = ev.buf,
+				group = highlight_augroup,
+				callback = vim.lsp.buf.clear_references,
+			})
 
-		vim.lsp.codelens.refresh(opts)
+			vim.api.nvim_create_autocmd('LspDetach', {
+				callback = function(event)
+					vim.lsp.buf.clear_references()
+					vim.api.nvim_clear_autocmds {
+						group = highlight_augroup,
+						buffer = event.buf
+					}
+				end,
+			})
+		end
 
-		vim.api.nvim_create_autocmd({ 'CursorHold', 'InsertLeave' }, {
-			buffer = ev.buf,
-			callback = function()
-				vim.lsp.codelens.refresh(opts)
-			end,
-		})
-
-		vim.api.nvim_create_autocmd({ 'CursorHold', 'CursorHoldI' }, {
-			buffer = ev.buf,
-			callback = function()
-				vim.lsp.buf.document_highlight()
-			end,
-		})
-
-		vim.api.nvim_create_autocmd({ 'CursorMoved', 'CursorMovedI' }, {
-			buffer = ev.buf,
-			callback = function()
-				vim.lsp.buf.clear_references()
-			end,
-		})
-
-		vim.api.nvim_create_autocmd('LspDetach', {
-			callback = function()
-				vim.lsp.buf.clear_references()
-			end,
-		})
+		if client and client.supports_method(vim.lsp.protocol.Methods.textDocument_codelens) then
+			vim.lsp.codelens.refresh(opts)
+			vim.api.nvim_create_autocmd({ 'CursorHold', 'InsertLeave' }, {
+				buffer = ev.buf,
+				callback = function()
+					vim.lsp.codelens.refresh(opts)
+				end,
+			})
+		end
 	end,
 })
 

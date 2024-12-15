@@ -24,15 +24,38 @@ end
 
 ---@return string
 function line.status()
-	local buffer = vim.api.nvim_win_get_buf(vim.g.statusline_winid)
+	local window = vim.g.statusline_winid
+	local fillchar
+	if window == vim.api.nvim_get_current_win() then
+		fillchar = vim.opt.fillchars:get()["stl"]
+	else
+		fillchar = vim.opt.fillchars:get()["stlnc"]
+	end
+
+	if fillchar == nil then
+		fillchar = " "
+	end
+
+	local buffer = vim.api.nvim_win_get_buf(window)
 	local buftype = vim.bo[buffer].buftype
-	print(buftype)
+
+
 	if buftype == "terminal" then
 		return table.concat({ vim.b[buffer].term_title, vim.api.nvim_buf_get_name(buffer) }, '%=')
 	end
-	local a = ""
-	if vim.opt.ruler then
-		a = "%8l:%c%V %8p%%"
+
+	if vim.bo[buffer].filetype == "netrw"
+	then
+		return "%f"
+	end
+
+	--	return '%=%-11.S%k%-14.(%l,%c%V%) %P'
+	local ruler = ""
+	if vim.o.ruler then
+		ruler = vim.o.rulerformat
+		if #ruler == 0 then
+			ruler = "%-14.(%l:%c%V%)" .. fillchar .. "%P"
+		end
 	end
 
 	local clients = {}
@@ -48,16 +71,18 @@ function line.status()
 	end
 
 	return table.concat({
-		vim.api.nvim_get_mode().mode:upper(),
-		line.get_formated_bufname(buffer),
+		'%<%f',
+		'%h%w%m%r',
 		"%=",
-		vim.bo.filetype,
+		vim.bo[buffer].filetype,
 		cli,
-		vim.bo.spelllang,
-		vim.bo.fileencoding,
-		vim.bo.fileformat,
-		a
-	}, " ")
+		vim.bo[buffer].spelllang,
+		vim.bo[buffer].fileencoding,
+		vim.bo[buffer].fileformat,
+		'%-12.k',
+		'%S',
+		ruler
+	}, fillchar)
 end
 
 ---@return string
@@ -82,40 +107,6 @@ function line.tab()
 	local tabline = table.concat(format, " ")
 
 	return tabline .. '%#TabLineFill#%T'
-end
-
----@return string
-function line.column()
-	local col = {}
-	if vim.opt.foldenable:get() then
-		local foldchar = " "
-		local hl = vim.fn.line(".") == vim.v.lnum and "CursorLineFold#" or "FoldColumn#"
-		if vim.v.virtnum == 0 and vim.fn.foldlevel(vim.v.lnum)
-		    and vim.fn.foldlevel(vim.v.lnum) > vim.fn.foldlevel(vim.v.lnum - 1) then
-			foldchar = vim.fn.foldclosed(vim.v.lnum) == -1 and "⌵" or "›"
-		end
-
-		foldchar = "%#" .. hl .. foldchar .. "%*"
-		table.insert(col, foldchar)
-	end
-
-	if vim.opt.number or vim.opt.relativenumber then
-		local linenr = 0
-		if vim.v.virtnum == 0 then
-			if vim.opt.number and not vim.opt.relativenumber then
-				linenr = vim.v.lnum
-			elseif not vim.opt.number and vim.opt.relativenumber then
-				linenr = vim.v.relnum
-			else
-				linenr = vim.v.relnum ~= 0 and vim.v.relnum or vim.v.lnum
-			end
-		end
-		local linenum = "%=" .. linenr
-		table.insert(col, linenum)
-	end
-
-	table.insert(col, "%s")
-	return table.concat(col, "")
 end
 
 return line
