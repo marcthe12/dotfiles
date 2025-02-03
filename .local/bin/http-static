@@ -1,0 +1,31 @@
+#!/usr/bin/env python3
+
+from argparse import ArgumentParser
+from collections.abc import Sequence
+from typing import Optional
+from pathlib import Path
+from http.server import SimpleHTTPRequestHandler,ThreadingHTTPServer
+import sys
+
+def serve(bind, port, directory):
+    def handler(request, client_address, server):
+        return SimpleHTTPRequestHandler(request, client_address, server, directory=directory)
+
+    with ThreadingHTTPServer((bind, port), handler) as httpd:
+        print(*httpd.socket.getsockname())
+        try:
+            httpd.serve_forever()
+        except KeyboardInterrupt:
+            return
+
+
+def main(argv: Optional[Sequence[str]] = None):
+    parser = ArgumentParser()
+    parser.add_argument('-b', '--bind', metavar='ADDRESS', default='', help='bind to this address')
+    parser.add_argument('-p', '--port', default=8080, type=int, help='bind to this port')
+    parser.add_argument('directory', type=Path, default=Path.cwd(), nargs="?", help='serve this directory')
+    args = parser.parse_args(argv)
+    serve(**vars(args))
+
+if __name__ == '__main__':
+	sys.exit(main())

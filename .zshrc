@@ -7,12 +7,12 @@ autoload -Uz edit-command-line
 zle -N edit-command-line
 bindkey -M vicmd v edit-command-line
 
-HISTFILE=$HOME/.histfile
+HISTFILE="$HOME/.histfile"
 HISTSIZE=1000
 SAVEHIST=1000
 setopt hist_ignore_all_dups hist_save_no_dups hist_reduce_blanks share_history extended_history
 
-fpath=($HOME/.zfunc $HOME/.zfunc/zsh-completions/src $fpath)
+fpath=("$HOME/.zfunc" "$HOME/.zfunc/zsh-completions/src" $fpath)
 
 alias diff='diff --color=auto'
 alias ls='ls -F --color=auto'

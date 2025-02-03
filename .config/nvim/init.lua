@@ -41,6 +41,8 @@ vim.opt.fillchars = {
 
 vim.o.showtabline = 2
 
+vim.cmd.colorscheme('retrobox')
+
 vim.keymap.set({ 'n', 'x' }, '<leader>y', '"+y')
 vim.keymap.set('n', '<leader>p', '"+p')
 vim.keymap.set('x', '<leader>p', '"+P')
@@ -53,7 +55,7 @@ vim.keymap.set('n', '<Esc>', function()
 end)
 
 vim.keymap.set('n', '<leader>t', function()
-	vim.cmd.vsplit()
+	vim.cmd.split()
 	vim.cmd.terminal()
 end)
 
