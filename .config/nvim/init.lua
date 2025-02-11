@@ -67,6 +67,13 @@ vim.keymap.set('n', '<leader>O', function()
 	vim.cmd.Lexplore(vim.fn.expand "%:p:h")
 end)
 
+for _, value in ipairs({
+	'<Up>', '<Up>', '<Down>', '<Left>', '<Right>',
+	'<Home>', '<End>', '<PageUp>', '<PageDown>'
+}) do
+	vim.keymap.set({ 'n', 'i' }, value, '<Nop>', { noremap = true, silent = false })
+end
+
 require 'nvim-treesitter.configs'.setup {
 	highlight = {
 		enable = true,
