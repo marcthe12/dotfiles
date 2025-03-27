@@ -1,2 +1,2 @@
 
-require'lazydev'.setup {}
+-- require'lazydev'.setup {}

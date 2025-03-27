@@ -39,9 +39,10 @@ vim.opt.fillchars = {
 	eob = " "
 }
 
+vim.o.completeopt = "menuone,noinsert,popup,fuzzy"
 vim.o.showtabline = 2
 
-vim.cmd.colorscheme('retrobox')
+vim.cmd.colorscheme 'retrobox'
 
 vim.keymap.set({ 'n', 'x' }, '<leader>y', '"+y')
 vim.keymap.set('n', '<leader>p', '"+p')
@@ -85,6 +86,10 @@ require 'nvim-treesitter.configs'.setup {
 vim.keymap.set('n', '<leader>q', function()
 	vim.diagnostic.setloclist()
 end)
+
+vim.diagnostic.config {
+	virtual_lines = true,
+}
 
 require 'conform'.setup {}
 
@@ -142,11 +147,19 @@ vim.api.nvim_create_autocmd('LspAttach', {
 		local opts = { buffer = ev.buf }
 		local client = vim.lsp.get_client_by_id(ev.data.client_id)
 
-		if client and client.supports_method(vim.lsp.protocol.Methods.textDocument_inlayHint) then
+		if not client then
+			return
+		end
+
+		if client:supports_method('textDocument/inlayHint') then
 			vim.lsp.inlay_hint.enable()
 		end
 
-		if client and client.supports_method(vim.lsp.protocol.Methods.textDocument_documentHighlight) then
+		if client:supports_method('textDocument/completion') then
+			vim.lsp.completion.enable(true, ev.data.client_id, ev.buf, { autotrigger = true })
+		end
+
+		if client:supports_method('textDocument/documentHighlight') then
 			local highlight_augroup = vim.api.nvim_create_augroup('lsp-highlight',
 				{ clear = false })
 			vim.api.nvim_create_autocmd({ 'CursorHold', 'CursorHoldI' }, {
@@ -172,7 +185,12 @@ vim.api.nvim_create_autocmd('LspAttach', {
 			})
 		end
 
-		if client and client.supports_method(vim.lsp.protocol.Methods.textDocument_codelens) then
+		if client:supports_method('textDocument/foldingRange') then
+			local win = vim.api.nvim_get_current_win()
+			vim.wo[win][0].foldexpr = 'v:lua.vim.lsp.foldexpr()'
+		end
+
+		if client:supports_method('textDocument/codelens') then
 			vim.lsp.codelens.refresh(opts)
 			vim.api.nvim_create_autocmd({ 'CursorHold', 'InsertLeave' }, {
 				buffer = ev.buf,
@@ -192,8 +210,8 @@ local function setupLSP(server_name, settings)
 	settings.capabilities = vim.tbl_deep_extend(
 		"force",
 		{},
-		vim.lsp.protocol.make_client_capabilities(),
-		require 'cmp_nvim_lsp'.default_capabilities()
+		vim.lsp.protocol.make_client_capabilities()
+	-- require 'cmp_nvim_lsp'.default_capabilities()
 	)
 	require "lspconfig"[server_name].setup(settings)
 end
@@ -210,6 +228,12 @@ require 'mason-lspconfig'.setup {
 			setupLSP("lua_ls", {
 				settings = {
 					Lua = {
+						runtime = {
+							version = 'LuaJIT'
+						},
+						workspace = {
+							library = vim.api.nvim_get_runtime_file("", true)
+						},
 						completion = {
 							callSnippet = 'Replace',
 						},
@@ -236,9 +260,6 @@ require 'mason-lspconfig'.setup {
 							compositeLiteralTypes = true,
 							functionTypeParameters = true,
 						},
-						codelenses = {
-							gc_details = true,
-						}
 					},
 				}
 			})
@@ -292,26 +313,26 @@ require 'mason-lspconfig'.setup {
 	}
 }
 
-local cmp = require 'cmp'
-local cmp_select = { behavior = cmp.SelectBehavior.Select }
-
-cmp.setup {
-	snippet = {
-		expand = function(args)
-			vim.snippet.expand(args.body)
-		end,
-	},
-	mapping = cmp.mapping.preset.insert({
-		['<Up>'] = cmp.mapping.select_prev_item(cmp_select),
-		['<Down>'] = cmp.mapping.select_next_item(cmp_select),
-	}),
-	sources = cmp.config.sources({
-		{
-			name = 'lazydev',
-			group_index = 0,
-		},
-		{ name = 'nvim_lsp' },
-	}, {
-		{ name = 'buffer' },
-	})
-}
+-- local cmp = require 'cmp'
+-- local cmp_select = { behavior = cmp.SelectBehavior.Select }
+--
+-- cmp.setup {
+-- 	snippet = {
+-- 		expand = function(args)
+-- 			vim.snippet.expand(args.body)
+-- 		end,
+-- 	},
+-- 	mapping = cmp.mapping.preset.insert({
+-- 		['<Up>'] = cmp.mapping.select_prev_item(cmp_select),
+-- 		['<Down>'] = cmp.mapping.select_next_item(cmp_select),
+-- 	}),
+-- 	sources = cmp.config.sources({
+-- 		{
+-- 			name = 'lazydev',
+-- 			group_index = 0,
+-- 		},
+-- 		{ name = 'nvim_lsp' },
+-- 	}, {
+-- 		{ name = 'buffer' },
+-- 	})
+-- }
