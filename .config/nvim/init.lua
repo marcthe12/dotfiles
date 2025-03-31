@@ -33,13 +33,8 @@ vim.o.laststatus = 2
 vim.o.statusline = "%!v:lua.require'lines'.status()"
 vim.o.tabline = "%!v:lua.require'lines'.tab()"
 vim.o.signcolumn = 'yes'
-vim.opt.fillchars = {
-	foldopen = "⌵",
-	foldclose = "›",
-	eob = " "
-}
 
-vim.o.completeopt = "menuone,noinsert,popup,fuzzy"
+vim.o.completeopt = "menuone,noselect,popup,fuzzy"
 vim.o.showtabline = 2
 
 vim.cmd.colorscheme 'retrobox'
@@ -75,13 +70,13 @@ for _, value in ipairs({
 	vim.keymap.set({ 'n', 'i' }, value, '<Nop>', { noremap = true, silent = false })
 end
 
-require 'nvim-treesitter.configs'.setup {
-	highlight = {
-		enable = true,
-	},
-	indent = { enable = true },
-	auto_install = true,
-}
+require 'mason'.setup {}
+
+vim.api.nvim_create_autocmd('FileType', {
+	callback = function(args)
+		pcall(vim.treesitter.start, args.buf, args.match)
+	end
+})
 
 vim.keymap.set('n', '<leader>q', function()
 	vim.diagnostic.setloclist()
@@ -91,11 +86,8 @@ vim.diagnostic.config {
 	virtual_lines = true,
 }
 
-require 'conform'.setup {}
-
-vim.o.formatexpr = "v:lua.require'conform'.formatexpr()"
 vim.keymap.set('n', '<leader>f', function()
-	require('conform').format { async = true, lsp_format = "fallback", }
+	vim.lsp.buf.format { async = true }
 end)
 
 vim.api.nvim_create_user_command("Format", function(args)
@@ -107,7 +99,7 @@ vim.api.nvim_create_user_command("Format", function(args)
 			["end"] = { args.line2, end_line:len() },
 		}
 	end
-	require("conform").format { async = true, lsp_format = "fallback", range = range }
+	vim.lsp.buf.format { async = true, range = range }
 end, { range = true })
 
 vim.keymap.set({ 'n', 'v' }, 'grl', function()
@@ -156,7 +148,12 @@ vim.api.nvim_create_autocmd('LspAttach', {
 		end
 
 		if client:supports_method('textDocument/completion') then
-			vim.lsp.completion.enable(true, ev.data.client_id, ev.buf, { autotrigger = true })
+			local chars = {}
+			for i = 32, 126 do
+				table.insert(chars, string.char(i))
+			end
+			client.server_capabilities.completionProvider.triggerCharacters = chars
+			vim.lsp.completion.enable(true, client.id, ev.buf, { autotrigger = true })
 		end
 
 		if client:supports_method('textDocument/documentHighlight') then
@@ -202,137 +199,20 @@ vim.api.nvim_create_autocmd('LspAttach', {
 	end,
 })
 
---- Setup LSP Server with lspconfig and nvim-cmp
----@param server_name string
----@param settings ?lspconfig.Config
-local function setupLSP(server_name, settings)
-	settings = settings or {}
-	settings.capabilities = vim.tbl_deep_extend(
-		"force",
-		{},
-		vim.lsp.protocol.make_client_capabilities()
-	-- require 'cmp_nvim_lsp'.default_capabilities()
-	)
-	require "lspconfig"[server_name].setup(settings)
-end
+vim.lsp.config('*', {
+	root_markers = { '.git' }
+})
 
-
-require 'mason'.setup {}
-require 'mason-lspconfig'.setup {
-	ensure_installed = { 'lua_ls' },
-	handlers = {
-		function(server_name)
-			setupLSP(server_name)
-		end,
-		lua_ls = function()
-			setupLSP("lua_ls", {
-				settings = {
-					Lua = {
-						runtime = {
-							version = 'LuaJIT'
-						},
-						workspace = {
-							library = vim.api.nvim_get_runtime_file("", true)
-						},
-						completion = {
-							callSnippet = 'Replace',
-						},
-						diagnostics = {
-							disable = { 'missing-fields' }
-						},
-						hint = {
-							enable = true
-						}
-					},
-				}
-			})
-		end,
-		gopls = function()
-			setupLSP("gopls", {
-				settings = {
-					gopls = {
-						hints = {
-							rangeVariableTypes = true,
-							parameterNames = true,
-							constantValues = true,
-							assignVariableTypes = true,
-							compositeLiteralFields = true,
-							compositeLiteralTypes = true,
-							functionTypeParameters = true,
-						},
-					},
-				}
-			})
-		end,
-		clangd = function()
-			setupLSP("clangd", {
-				settings = {
-					clangd = {
-						InlayHints = {
-							Designators = true,
-							Enabled = true,
-							ParameterNames = true,
-							DeducedTypes = true,
-						},
-						fallbackFlags = { "-std=c++20" },
-					},
-				}
-			})
-		end,
-		ts_ls = function()
-			setupLSP("ts_ls", {
-				settings = {
-					typescript = {
-						inlayHints = {
-							includeInlayParameterNameHints = "all",
-							includeInlayParameterNameHintsWhenArgumentMatchesName = false,
-							includeInlayFunctionParameterTypeHints = true,
-							includeInlayVariableTypeHints = true,
-							includeInlayVariableTypeHintsWhenTypeMatchesName = false,
-							includeInlayPropertyDeclarationTypeHints = true,
-							includeInlayFunctionLikeReturnTypeHints = true,
-							includeInlayEnumMemberValueHints = true,
-						},
-					},
-					javascript = {
-						inlayHints = {
-							includeInlayParameterNameHints = "all",
-							includeInlayParameterNameHintsWhenArgumentMatchesName = false,
-							includeInlayFunctionParameterTypeHints = true,
-							includeInlayVariableTypeHints = true,
-							includeInlayVariableTypeHintsWhenTypeMatchesName = false,
-							includeInlayPropertyDeclarationTypeHints = true,
-							includeInlayFunctionLikeReturnTypeHints = true,
-							includeInlayEnumMemberValueHints = true,
-						},
-					},
-				}
-			})
-		end,
-		rust_analyzer = function() end,
-	}
+vim.lsp.enable {
+	"lua_ls",
+	"gopls",
+	"clangd",
+	"mesonlsp",
+	"ts_ls",
+	-- "eslint",
+	"html",
+	"cssls",
+	"jsonls",
+	"ruff",
+	-- "pyright",
 }
-
--- local cmp = require 'cmp'
--- local cmp_select = { behavior = cmp.SelectBehavior.Select }
---
--- cmp.setup {
--- 	snippet = {
--- 		expand = function(args)
--- 			vim.snippet.expand(args.body)
--- 		end,
--- 	},
--- 	mapping = cmp.mapping.preset.insert({
--- 		['<Up>'] = cmp.mapping.select_prev_item(cmp_select),
--- 		['<Down>'] = cmp.mapping.select_next_item(cmp_select),
--- 	}),
--- 	sources = cmp.config.sources({
--- 		{
--- 			name = 'lazydev',
--- 			group_index = 0,
--- 		},
--- 		{ name = 'nvim_lsp' },
--- 	}, {
--- 		{ name = 'buffer' },
--- 	})
--- }

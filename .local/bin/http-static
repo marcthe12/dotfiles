@@ -4,12 +4,13 @@ from argparse import ArgumentParser
 from collections.abc import Sequence
 from typing import Optional
 from pathlib import Path
-from http.server import SimpleHTTPRequestHandler,ThreadingHTTPServer
-import sys
+from os import PathLike, fspath
+from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
+from functools import partial
 
-def serve(bind, port, directory):
-    def handler(request, client_address, server):
-        return SimpleHTTPRequestHandler(request, client_address, server, directory=directory)
+
+def serve(bind: str, port: int, directory: PathLike):
+    handler = partial(SimpleHTTPRequestHandler, directory=fspath(directory))
 
     with ThreadingHTTPServer((bind, port), handler) as httpd:
         print(*httpd.socket.getsockname())
@@ -19,13 +20,28 @@ def serve(bind, port, directory):
             return
 
 
-def main(argv: Optional[Sequence[str]] = None):
+def main(argv: Optional[Sequence[str]] = None) -> None:
     parser = ArgumentParser()
-    parser.add_argument('-b', '--bind', metavar='ADDRESS', default='', help='bind to this address')
-    parser.add_argument('-p', '--port', default=8080, type=int, help='bind to this port')
-    parser.add_argument('directory', type=Path, default=Path.cwd(), nargs="?", help='serve this directory')
+    parser.add_argument(
+        "-b", "--bind", metavar="ADDRESS", default="", help="bind to this address"
+    )
+    parser.add_argument(
+        "-p", "--port", default=8080, type=int, help="bind to this port"
+    )
+    parser.add_argument(
+        "directory",
+        type=Path,
+        default=Path.cwd(),
+        nargs="?",
+        help="serve this directory",
+    )
     args = parser.parse_args(argv)
-    serve(**vars(args))
 
-if __name__ == '__main__':
-	sys.exit(main())
+    try:
+        serve(**vars(args))
+    except KeyboardInterrupt:
+        pass
+
+
+if __name__ == "__main__":
+    main()
