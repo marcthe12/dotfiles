@@ -37,10 +37,7 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
     )
     args = parser.parse_args(argv)
 
-    try:
-        serve(**vars(args))
-    except KeyboardInterrupt:
-        pass
+    serve(**vars(args))
 
 
 if __name__ == "__main__":

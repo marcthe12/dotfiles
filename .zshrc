@@ -36,8 +36,6 @@ zstyle ':completion:*' rehash true
 zstyle ':completion:*:*:-command-:*:*' group-order alias builtins functions commands
 compinit
 
-compdef dotfiles=git
-
 bindkey -M menuselect 'h' vi-backward-char
 bindkey -M menuselect 'k' vi-up-line-or-history
 bindkey -M menuselect 'l' vi-forward-char
